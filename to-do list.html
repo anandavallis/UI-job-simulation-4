@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Todo List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        
+        .todo-container {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        
+        .todo-input {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        
+        .todo-input input {
+            flex-grow: 1;
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .todo-input button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .todo-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        
+        .todo-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .todo-item:last-child {
+            border-bottom: none;
+        }
+        
+        .todo-item .actions button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .todo-item .actions .edit-btn {
+            background-color: #2196F3;
+            color: white;
+        }
+        
+        .todo-item .actions .delete-btn {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .edit-input {
+            flex-grow: 1;
+            margin-right: 10px;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="todo-container">
+        <h1>Todo List</h1>
+        
+        <!-- Task Input Section -->
+        <div class="todo-input">
+            <input 
+                type="text" 
+                id="taskInput" 
+                placeholder="Enter a new task"
+            >
+            <button id="addTaskBtn">Add Task</button>
+        </div>
+        
+        <!-- Task List -->
+        <ul id="todoList" class="todo-list">
+            <!-- Tasks will be dynamically added here -->
+        </ul>
+        
+        <!-- Task Count -->
+        <p id="taskCount">Total Tasks: 0</p>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const taskInput = document.getElementById('taskInput');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const todoList = document.getElementById('todoList');
+        const taskCount = document.getElementById('taskCount');
+
+        // Array to store tasks
+        let tasks = [];
+
+        // Function to update task count
+        function updateTaskCount() {
+            taskCount.textContent = `Total Tasks: ${tasks.length}`;
+        }
+
+        // Function to add a new task
+        function addTask() {
+            // Get and trim the task input
+            const taskText = taskInput.value.trim();
+
+            // Validate task input
+            if (taskText === '') {
+                alert('Please enter a task!');
+                return;
+            }
+
+            // Check for duplicate tasks
+            if (tasks.some(task => task.text.toLowerCase() === taskText.toLowerCase())) {
+                alert('This task already exists!');
+                return;
+            }
+
+            // Create task object
+            const task = {
+                id: Date.now(), // Unique identifier
+                text: taskText,
+                isEditing: false
+            };
+
+            // Add task to array
+            tasks.push(task);
+
+            // Render tasks
+            renderTasks();
+
+            // Clear input
+            taskInput.value = '';
+        }
+
+        // Function to render tasks
+        function renderTasks() {
+            // Clear existing list
+            todoList.innerHTML = '';
+
+            // Render each task
+            tasks.forEach(task => {
+                const listItem = document.createElement('li');
+                listItem.classList.add('todo-item');
+
+                if (task.isEditing) {
+                    // Editing mode
+                    listItem.innerHTML = `
+                        <input 
+                            type="text" 
+                            class="edit-input" 
+                            value="${task.text}"
+                            id="edit-${task.id}"
+                        >
+                        <div class="actions">
+                            <button onclick="saveTask(${task.id})">Save</button>
+                            <button onclick="cancelEdit(${task.id})">Cancel</button>
+                        </div>
+                    `;
+                } else {
+                    // Normal mode
+                    listItem.innerHTML = `
+                        <span>${task.text}</span>
+                        <div class="actions">
+                            <button class="edit-btn" onclick="startEdit(${task.id})">Edit</button>
+                            <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
+                        </div>
+                    `;
+                }
+
+                todoList.appendChild(listItem);
+            });
+
+            // Update task count
+            updateTaskCount();
+        }
+
+        // Function to start editing a task
+        function startEdit(taskId) {
+            // Cancel any ongoing editing
+            tasks.forEach(task => {
+                task.isEditing = task.id === taskId;
+            });
+
+            // Re-render tasks
+            renderTasks();
+
+            // Focus on edit input
+            const editInput = document.getElementById(`edit-${taskId}`);
+            if (editInput) editInput.focus();
+        }
+
+        // Function to save edited task
+        function saveTask(taskId) {
+            // Find the task
+            const task = tasks.find(t => t.id === taskId);
+            
+            // Get edited text
+            const editedText = document.getElementById(`edit-${taskId}`).value.trim();
+
+            // Validate input
+            if (editedText === '') {
+                alert('Task cannot be empty!');
+                return;
+            }
+
+            // Check for duplicate tasks (excluding current task)
+            if (tasks.some(t => 
+                t.id !== taskId && 
+                t.text.toLowerCase() === editedText.toLowerCase()
+            )) {
+                alert('This task already exists!');
+                return;
+            }
+
+            // Update task
+            task.text = editedText;
+            task.isEditing = false;
+
+            // Re-render tasks
+            renderTasks();
+        }
+
+        // Function to cancel editing
+        function cancelEdit(taskId) {
+            // Find the task and exit editing mode
+            const task = tasks.find(t => t.id === taskId);
+            task.isEditing = false;
+
+            // Re-render tasks
+            renderTasks();
+        }
+
+        // Function to delete a task
+        function deleteTask(taskId) {
+            // Remove task from array
+            tasks = tasks.filter(task => task.id !== taskId);
+
+            // Re-render tasks
+            renderTasks();
+        }
+
+        // Event Listeners
+        addTaskBtn.addEventListener('click', addTask);
+        taskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addTask();
+            }
+        });
+    </script>
+</body>
+</html>
