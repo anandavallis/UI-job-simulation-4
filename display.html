@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Input Form</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      background: white;
+      max-width: 400px;
+      width: 100%;
+      padding:  30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 25px;
+      font-weight: 700;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #555;
+    }
+    input {
+      padding: 12px 15px;
+      margin-bottom: 15px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1.8px solid #ccc;
+    }
+    input:focus {
+      border-color: #007bff;
+      outline: none;
+    }
+    .error-message {
+      color: #d93025;
+      font-size: 0.85rem;
+      margin-top: -12px;
+      margin-bottom: 12px;
+      min-height: 18px;
+    }
+    .input-error {
+      border-color: #d93025;
+    }
+    button {
+      padding: 12px 0;
+      background: #007bff;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 700;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+    button:hover:not(:disabled) {
+      background: #0056b3;
+    }
+    @media (max-width: 400px) {
+      body {
+        padding: 10px;
+      }
+      .container {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>User Input Form</h2>
+    <form id="userForm" novalidate>
+      <label for="name">Full Name *</label>
+      <input type="text" id="name" name="name" placeholder="John Doe" autocomplete="name" required />
+      <div class="error-message" id="error-name"></div>
+
+      <label for="email">Email Address *</label>
+      <input type="email" id="email" name="email" placeholder="example@gmail.com" autocomplete="email" required />
+      <div class="error-message" id="error-email"></div>
+
+      <label for="phone">Phone Number *</label>
+      <input type="tel" id="phone" name="phone" placeholder="+ 098 765 4321" autocomplete="tel" required />
+      <div class="error-message" id="error-phone"></div>
+
+      <label for="age">Age *</label>
+      <input type="number" id="age" name="age" placeholder="18" min="1" max="120" required />
+      <div class="error-message" id="error-age"></div>
+
+      <button type="submit" id="submitBtn">Submit</button>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById("userForm");
+
+    const fields = {
+      name: {
+        input: form.elements['name'],
+        error: document.getElementById('error-name'),
+        validate: function(value) {
+          if (!value.trim()) {
+            return 'Name is required';
+          }
+          if (value.trim().length < 2) {
+            return 'Name must be at least 2 characters';
+          }
+          return '';
+        }
+      },
+      email: {
+        input: form.elements['email'],
+        error: document.getElementById('error-email'),
+        validate: function(value) {
+          if (!value.trim()) {
+            return 'Email is required';
+          }
+          const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailPattern.test(value.trim())) {
+            return 'Enter a valid email address.';
+          }
+          return '';
+        }
+      },
+      phone: {
+        input: form.elements['phone'],
+        error: document.getElementById('error-phone'),
+        validate: function(value) {
+          if (!value.trim()) {
+            return 'Phone number is required';
+          }
+          const phonePattern = /^[+]?[\d\s\-()]{7,20}$/;
+          if (!phonePattern.test(value.trim())) {
+            return 'Enter a valid phone number.';
+          }
+          return '';
+        }
+      },
+      age: {
+        input: form.elements['age'],
+        error: document.getElementById('error-age'),
+        validate: function(value) {
+          if (!value.trim()) {
+            return 'Age is required';
+          }
+          const num = Number(value);
+          if (!Number.isInteger(num) || num < 1 || num > 120) {
+            return 'Age must be a whole number between 1 and 120.';
+          }
+          return '';
+        }
+      }
+    };
+
+    function validateField(field) {
+      const value = field.input.value;
+      const errorMsg = field.validate(value);
+      field.error.textContent = errorMsg;
+      if (errorMsg) {
+        field.input.classList.add('input-error');
+      } else {
+        field.input.classList.remove('input-error');
+      }
+      return !errorMsg;
+    }
+
+    function validateForm() {
+      let isValid = true;
+      Object.values(fields).forEach(field => {
+        if (!validateField(field)) {
+          isValid = false;
+        }
+      });
+      return isValid;
+    }
+
+    function sanitizeInput(value) {
+      const div = document.createElement('div');
+      div.textContent = value;
+      return div.innerHTML;
+    }
+
+    // Validate on input for better UX
+     Object.values(fields).forEach(field => {
+      field.input.addEventListener('input', () => validateField(field));
+    });
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      if (!validateForm()) {
+        // Focus first invalid input
+        const firstErrorField = Object.values(fields).find(f => f.error.textContent);
+        if (firstErrorField) firstErrorField.input.focus();
+        return;
+      }
+
+      // Collect and sanitize data
+      const formData = {};
+      Object.entries(fields).forEach(([key, field]) => {
+        formData[key] = sanitizeInput(field.input.value.trim());
+      });
+
+      // Save to localStorage
+      localStorage.setItem('userFormData', JSON.stringify(formData));
+
+      // Redirect to display.html
+      window.location.href = 'display.html';
+    });
+  </script>
+</body>
+</html>
+
